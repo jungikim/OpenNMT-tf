@@ -70,6 +70,47 @@ class _RNNBase(onmt.models.SequenceToSequence):
         }
     })
 
+class ListenAttendSpellASR(onmt.models.SequenceToSequence):
+  """Defines a model similar to the "Listen, Attend and Spell" model described
+  in https://arxiv.org/abs/1508.01211.
+  """
+  def __init__(self):
+    super(ListenAttendSpellASR, self).__init__(
+        source_inputter=onmt.inputters.AudioInputter(),
+        target_inputter=onmt.inputters.WordEmbedder(
+            vocabulary_file_key="target_words_vocabulary",
+            embedding_size=50),
+        encoder=onmt.encoders.PyramidalRNNEncoder(
+            num_layers=3,
+            num_units=512,
+            reduction_factor=2,
+            cell_class=tf.contrib.rnn.LSTMCell,
+            dropout=0.3),
+        decoder=onmt.decoders.MultiAttentionalRNNDecoder(
+            num_layers=3,
+            num_units=512,
+            attention_layers=[0],
+            attention_mechanism_class=tf.contrib.seq2seq.LuongMonotonicAttention,
+            cell_class=tf.contrib.rnn.LSTMCell,
+            dropout=0.3,
+            residual_connections=False))
+
+class TransformerASR(onmt.models.Transformer):
+  """Defines a Transformer model as decribed in https://arxiv.org/abs/1706.03762."""
+  def __init__(self):
+    super(TransformerASR, self).__init__(
+        source_inputter=onmt.inputters.AudioInputter(),
+        target_inputter=onmt.inputters.WordEmbedder(
+            vocabulary_file_key="target_words_vocabulary",
+            embedding_size=64),
+        num_layers=4,
+        num_units=384,
+        num_heads=2,
+        ffn_inner_dim=1536,
+        dropout=0.1,
+        attention_dropout=0.2,
+        relu_dropout=0.2)
+
 class NMTBig(_RNNBase):
   """Defines a bidirectional LSTM encoder-decoder model."""
   def __init__(self):

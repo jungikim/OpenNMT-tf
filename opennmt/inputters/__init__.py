@@ -10,3 +10,4 @@ from opennmt.inputters.text_inputter import WordEmbedder
 from opennmt.inputters.text_inputter import CharConvEmbedder
 from opennmt.inputters.text_inputter import CharRNNEmbedder
 from opennmt.inputters.record_inputter import SequenceRecordInputter, write_sequence_record
+from opennmt.inputters.audio_inputter import AudioInputter

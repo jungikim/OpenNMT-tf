@@ -1,0 +1,12 @@
+# Default OpenNMT parameters from the Lua version.
+
+model_dir: librispeech_model
+
+data:
+  train_features_file: librispeech_data/train-all-flacs.tfrecords
+  train_labels_file: librispeech_data/train-all-transcripts.txt
+
+  eval_features_file: librispeech_data/dev-all-flacs.tfrecords
+  eval_labels_file: librispeech_data/dev-all-transcripts.txt
+
+  target_words_vocabulary: librispeech_data/transcripts.vocab
