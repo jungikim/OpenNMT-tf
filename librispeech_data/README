@@ -1,0 +1,27 @@
+
+
+This directory contains partial information about the "LibriSpeech ASR corpus" (http://www.openslr.org/12/; licensed under CC BY 4.0).
+
+dev-all-flacs.txt
+dev-all-transcripts.txt
+test-clean-flacs.txt
+test-clean-transcripts.txt
+train-all-flacs.txt
+train-all-transcripts.txt
+
+{train-all,dev-all,test-clean}-flacs.txt files contain paths to audio files.
+
+    PATH_TO_LIBRISPEECH/train-clean-100/374/180298/374-180298-0000.flac
+    PATH_TO_LIBRISPEECH/train-clean-100/374/180298/374-180298-0001.flac
+    PATH_TO_LIBRISPEECH/train-clean-100/374/180298/374-180298-0002.flac
+    PATH_TO_LIBRISPEECH/train-clean-100/374/180298/374-180298-0003.flac
+    ...
+
+"PATH_TO_LIBRISPEECH" in these files must be replaced by an actual path to the LibriSpeech ASR corpus downloaded by youself.
+Each line in the {train-all,dev-all,test-clean}-transcripts.txt files contains the transcript for the corresponding audio file in *-flacs.txt.
+These transcripts are copied from the LibriSpeech ASR corpus for your convenience only.
+
+Splitting of the corpus into train, dev, and test follows the original distribution, where train-all combines train-clean-100, train-clean-360, train-other-500, and dev-all combines dev-clean and dev-other. 
+
+Please refer to the original website (http://www.openslr.org/12/) for more information.
+
