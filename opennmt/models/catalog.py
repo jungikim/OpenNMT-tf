@@ -111,6 +111,14 @@ class TransformerASR(onmt.models.Transformer):
         attention_dropout=0.2,
         relu_dropout=0.2)
 
+class KaffeImageClassifier(onmt.models.SequenceClassifier):
+  """  """
+  def __init__(self, modelname):
+    super(KaffeImageClassifier, self).__init__(
+        inputter=onmt.inputters.KaffeImageInputter(modelname),
+        encoder=onmt.encoders.KaffeEncoder(modelname),
+        labels_vocabulary_file_key="tags_vocabulary")
+
 class NMTBig(_RNNBase):
   """Defines a bidirectional LSTM encoder-decoder model."""
   def __init__(self):
