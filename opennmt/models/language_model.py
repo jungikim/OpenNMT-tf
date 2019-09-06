@@ -121,7 +121,7 @@ class LanguageModel(Model):
     logits, state, _ = self.decoder(inputs, length_or_step, state=state, training=training)
     return logits, state
 
-  def compute_loss(self, outputs, labels, training=True, params=None):
+  def compute_loss(self, features, outputs, labels, training=True, params=None):
     if params is None:
       params = {}
     return losses.cross_entropy_sequence_loss(

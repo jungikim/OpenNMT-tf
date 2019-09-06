@@ -77,7 +77,7 @@ class SequenceClassifier(Model):
 
     return logits, predictions
 
-  def compute_loss(self, outputs, labels, training=True, params=None):
+  def compute_loss(self, features, outputs, labels, training=True, params=None):
     if params is None:
       params = {}
     return cross_entropy_loss(

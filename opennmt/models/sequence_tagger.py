@@ -18,6 +18,7 @@ class SequenceTagger(Model):
                labels_vocabulary_file_key,
                tagging_scheme=None,
                crf_decoding=False,
+               ctc_decoding=False,
                daisy_chain_variables=False,
                name="seqtagger"):
     """Initializes a sequence tagger.
@@ -32,6 +33,7 @@ class SequenceTagger(Model):
         only BIOES), additional evaluation metrics could be computed such as
         precision, recall, etc.
       crf_decoding: If ``True``, add a CRF layer after the encoder.
+      ctc_decoding: If ``True``, add a CTC layer after the encoder.
       daisy_chain_variables: If ``True``, copy variables in a daisy chain
         between devices for this model. Not compatible with RNN based models.
       name: The name of this model.
@@ -43,6 +45,7 @@ class SequenceTagger(Model):
         daisy_chain_variables=daisy_chain_variables)
     self.encoder = encoder
     self.crf_decoding = crf_decoding
+    self.ctc_decoding = ctc_decoding
     self.transition_params = None
     if tagging_scheme:
       self.tagging_scheme = tagging_scheme.lower()
@@ -78,6 +81,20 @@ class SequenceTagger(Model):
             self.transition_params,
             encoder_sequence_length)
         tags_id = tf.cast(tags_id, tf.int64)
+      elif self.ctc_decoding:
+        logits_transposed = tf.transpose(logits, perm=[1, 0, 2])
+
+        decoded, log_probabilities = tf.nn.ctc_beam_search_decoder(
+                                            logits_transposed,
+                                            encoder_sequence_length,
+                                            top_paths=1)
+
+        log_probabilities = tf.squeeze(log_probabilities,[1])
+        _,_,output_sequence_length = tf.unique_with_counts(
+                                       tf.squeeze(
+                                         tf.gather(decoded[0].indices, [0], axis=1),[1]))
+        tags_id = tf.sparse.to_dense(decoded[0])
+
       else:
         tags_prob = tf.nn.softmax(logits)
         tags_id = tf.argmax(tags_prob, axis=2)
@@ -86,7 +103,8 @@ class SequenceTagger(Model):
 
       # A tensor can not be both fed and fetched,
       # so identity a new tensor of "length" for export model to predict
-      output_sequence_length = tf.identity(encoder_sequence_length)
+      if not self.ctc_decoding:
+        output_sequence_length = tf.identity(encoder_sequence_length)
 
       predictions = {
           "length": output_sequence_length,
@@ -97,7 +115,7 @@ class SequenceTagger(Model):
 
     return logits, predictions
 
-  def compute_loss(self, outputs, labels, training=True, params=None):
+  def compute_loss(self, features, outputs, labels, training=True, params=None):
     if params is None:
       params = {}
     if self.crf_decoding:
@@ -108,6 +126,16 @@ class SequenceTagger(Model):
           transition_params=self.transition_params)
       loss = tf.reduce_sum(-log_likelihood)
       loss_normalizer = tf.cast(tf.shape(log_likelihood)[0], loss.dtype)
+      return loss, loss_normalizer
+    elif self.ctc_decoding:
+      neg_log_likelihood = tf.compat.v2.nn.ctc_loss(
+            labels["tags_id"], #[batch_size, max_label_seq_length]
+            outputs, #[batch_size, frames, num_labels]
+            labels["length"], #[batch_size]: Length of reference label sequence
+            features["length"], #[batch_size]: Length of input sequence in logits
+            logits_time_major=False)
+      loss = tf.reduce_sum(neg_log_likelihood)
+      loss_normalizer = tf.cast(tf.shape(neg_log_likelihood)[0], loss.dtype)
       return loss, loss_normalizer
     else:
       return cross_entropy_sequence_loss(

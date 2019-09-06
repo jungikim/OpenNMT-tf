@@ -119,7 +119,7 @@ class Model(tf.keras.layers.Layer):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def compute_loss(self, outputs, labels, training=True, params=None):
+  def compute_loss(self, features, outputs, labels, training=True, params=None):
     """Computes the loss.
 
     Args:

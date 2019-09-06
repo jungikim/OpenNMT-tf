@@ -199,7 +199,7 @@ def make_model_fn(model,
 
     elif mode == tf.estimator.ModeKeys.EVAL:
       logits, predictions = local_model(features, labels, params, mode)
-      loss = local_model.compute_loss(logits, labels, training=False, params=params)
+      loss = local_model.compute_loss(logits, features, labels, training=False, params=params)
       loss = _extract_loss(loss)
       eval_metric_ops = local_model.compute_metrics(predictions, labels)
       evaluation_hooks = []
@@ -236,7 +236,7 @@ def _loss_op(model, features, labels, params, mode):
   """Single callable to compute the loss."""
   training = mode == tf.estimator.ModeKeys.TRAIN
   logits, _ = model(features, labels, params, mode)
-  return model.compute_loss(logits, labels, training=training, params=params)
+  return model.compute_loss(features, logits, labels, training=training, params=params)
 
 def _normalize_loss(num, den=None):
   """Normalizes the loss."""
