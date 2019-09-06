@@ -115,7 +115,7 @@ class KaffeImageClassifier(onmt.models.SequenceClassifier):
   """  """
   def __init__(self, modelname):
     super(KaffeImageClassifier, self).__init__(
-        inputter=onmt.inputters.KaffeImageInputter(modelname),
+        inputter=onmt.inputters.video_inputter(modelname),
         encoder=onmt.encoders.KaffeEncoder(modelname),
         labels_vocabulary_file_key="tags_vocabulary")
 
@@ -236,6 +236,40 @@ class SeqTagger(onmt.models.SequenceTagger):
             "batch_size": 32
         }
     })
+
+
+class VideoCTCTagger(onmt.models.SequenceTagger):
+  """Defines a """
+  def __init__(self):
+    # pylint: disable=bad-continuation
+    super(VideoCTCTagger, self).__init__(
+        inputter=onmt.inputters.VideoInputter(),
+        encoder= onmt.encoders.SequentialEncoder([
+        onmt.encoders.KaffeEncoder('AlexNet'),
+        onmt.encoders.BidirectionalRNNEncoder(
+            num_layers=1,
+            num_units=4096,
+            reducer=onmt.layers.ConcatReducer(),
+            cell_class=tf.nn.rnn_cell.LSTMCell,
+            dropout=0.5,
+            residual_connections=False)
+        ]),
+
+        labels_vocabulary_file_key="tags_vocabulary",
+        ctc_decoding=True)
+
+  def auto_config(self, num_devices=1):
+    config = super(VideoCTCTagger, self).auto_config(num_devices=num_devices)
+    return merge_dict(config, {
+        "params": {
+            "optimizer": "AdamOptimizer",
+            "learning_rate": 0.001
+        },
+        "train": {
+            "batch_size": 32
+        }
+    })
+
 
 class Transformer(onmt.models.Transformer):
   """Defines a Transformer model as decribed in https://arxiv.org/abs/1706.03762."""
