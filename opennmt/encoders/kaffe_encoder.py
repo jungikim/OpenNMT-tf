@@ -3,7 +3,6 @@
 import tensorflow as tf
 
 from opennmt.encoders.encoder import Encoder
-from opennmt.layers.position import PositionEmbedder
 
 from kaffe.imagenet import models
 
@@ -33,26 +32,30 @@ class KaffeEncoder(Encoder):
                          'ResNet152': (models.ResNet152, 'pool5')}
 
     if self.modelname in self._model_dict: 
-        self.model, self._output_layer_name = self.modelDict[self.modelname]
+        self.model, self._output_layer_name = self._model_dict[self.modelname]
     else:
         raise Exception('Unknown model name')
 
 
   def encode(self, inputs, sequence_length=None, mode=tf.estimator.ModeKeys.TRAIN):
 
-#     # squeeze sequence dimension
-#     inputs = tf.squeeze(inputs, [1])
+    # Merge batch and sequence timesteps dimensions.
+    # B x seqLen x Dim ==> B * seqLen x 227 x 227 x 3
+    input_to_kaffe = tf.reshape(inputs, [-1, 227, 227, 3])
 
     with tf.variable_scope('kaffe'):
-        self.net = self.model({'data': inputs, 'use_dropout': mode == tf.estimator.ModeKeys.TRAIN})
+        self.net = self.model({'data': input_to_kaffe, 'use_dropout': mode == tf.estimator.ModeKeys.TRAIN})
 
     encoder_output = self.net.layers[self._output_layer_name]
-    # add back sequence dimension    
-#     encoder_output = tf.reshape(encoder_output, [encoder_output[0], 1, encoder_output[1]])
+
+#Invalid argument: Input to reshape is a tensor with 512000 values, but the requested shape has 116224000
+    # Split batch and sequence timesteps dimensions.
+    encoder_output = tf.reshape(encoder_output, [tf.shape(inputs)[0], tf.shape(inputs)[1], 4096])
+
     encoder_state = encoder_output
 
     return (encoder_output, encoder_state, sequence_length)
 
 
   def load(self, modelpath, session):
-    self.net.load(modelpath, session)
+    self.model.load(modelpath, session)
