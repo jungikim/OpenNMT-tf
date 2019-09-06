@@ -78,7 +78,7 @@ class AudioInputter(Inputter):
 # 
 #     return receiver_tensors, features
 
-  def _process(self, data):
+  def make_features(self, data):
 
     data = super(AudioInputter, self)._process(data)
 

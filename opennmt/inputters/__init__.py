@@ -11,3 +11,5 @@ from opennmt.inputters.text_inputter import CharConvEmbedder
 from opennmt.inputters.text_inputter import CharRNNEmbedder
 from opennmt.inputters.record_inputter import SequenceRecordInputter, write_sequence_record
 from opennmt.inputters.audio_inputter import AudioInputter
+from opennmt.inputters.image_inputter import ImageInputter
+from opennmt.inputters.video_inputter import VideoInputter
