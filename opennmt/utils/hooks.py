@@ -316,3 +316,47 @@ class VariablesInitializerHook(_SESSION_RUN_HOOK):
   def after_create_session(self, session, coord):
     _ = coord
     session.run(self._init_op)
+
+
+
+class LoadPretrainWeightsHook(_SESSION_RUN_HOOK):
+  """"Hook that loads model weights from Pretrained models before starting the training."""
+
+  def __init__(self):
+    self.assign_pairs = []
+    tf.logging.info('Created LoadPretrainWeightsHook')
+
+  def begin(self):
+    tf.logging.info('LoadPretrainWeightsHook:begin()')
+
+    '''Load network weights.
+    data_path: The path to the numpy-serialized network weights
+    session: The current TensorFlow session
+    ignore_missing: If true, serialized weights for missing layers are ignored.
+    '''
+    tvars = tf.trainable_variables()
+    for tvar in tvars:
+      tf.logging.info('Tvar: %s' % tvar)
+
+    import numpy as np
+    data_path = '/home/jkim/caffe-models/bvlc_alexnet-tensorflow/bvlc_alexnet-train.npy'
+    tf.logging.info('Loading from %s' % data_path)
+    data_dict = np.load(data_path).item()
+    for op_name in data_dict:
+      tf.logging.info('op_name %s' % op_name)
+      with tf.variable_scope('seqtagger/encoder/encoder_0/Kaffe/%s' % op_name, reuse=True):
+        for param_name, data in data_dict[op_name].iteritems():
+          tf.logging.info('param_name %s' % param_name)
+          try:
+            var = tf.get_variable(param_name)
+            self.assign_pairs.append((var, data))
+            tf.logging.info('Loaded param_name %s' % param_name)
+          except ValueError:
+            tf.logging.info('Failed to load %s' % param_name)
+
+  def after_create_session(self, session, coord):
+    _ = coord
+
+    tf.logging.info('LoadPretrainWeightsHook:after_create_session()')
+    for variable, value in self.assign_pairs:
+      variable.load(value, session=session)

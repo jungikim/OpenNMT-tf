@@ -43,8 +43,11 @@ class KaffeEncoder(Encoder):
     # B x seqLen x Dim ==> B * seqLen x 227 x 227 x 3
     input_to_kaffe = tf.reshape(inputs, [-1, 227, 227, 3])
 
-    with tf.variable_scope('kaffe'):
+    with tf.variable_scope('Kaffe'):
         self.net = self.model({'data': input_to_kaffe, 'use_dropout': mode == tf.estimator.ModeKeys.TRAIN})
+
+#    for variable in tf.trainable_variables():
+#      print(variable.op.name)
 
     encoder_output = self.net.layers[self._output_layer_name]
 
@@ -58,4 +61,4 @@ class KaffeEncoder(Encoder):
 
 
   def load(self, modelpath, session):
-    self.model.load(modelpath, session)
+    self.net.load(modelpath, session)

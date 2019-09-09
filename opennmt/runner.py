@@ -228,6 +228,9 @@ class Runner(object):
 
     if checkpoint_path is not None:
       train_hooks.append(hooks.LoadWeightsFromCheckpointHook(checkpoint_path))
+    else:
+      train_hooks.append(hooks.LoadPretrainWeightsHook())
+
     if self._hvd is not None:
       train_hooks.append(self._hvd.BroadcastGlobalVariablesHook(0))
 
