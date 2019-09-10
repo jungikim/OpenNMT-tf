@@ -24,12 +24,6 @@ class VideoInputter(Inputter):
   def get_length(self, data):
     return data["length"]
 
-#  def make_dataset(self, data_file, training=None):
-#    return tf.data.TextLineDataset(data_file)
-
-#  def get_dataset_size(self, data_file):
-#    return count_lines(data_file)
-
   def make_dataset(self, data_file, training=None):
     return tf.data.TFRecordDataset(data_file)
 
@@ -41,19 +35,19 @@ class VideoInputter(Inputter):
       features = {}
     if "tensor" in features:
       return features
-    tf_parse_example = compat.tf_compat(v2="io.parse_single_example", v1="parse_single_example")
-    tf_var_len_feature = compat.tf_compat(v2="io.VarLenFeature", v1="VarLenFeature")
-    example = tf_parse_example(element, features={
-        "shape": tf_var_len_feature(tf.int64),
-        "values": tf_var_len_feature(tf.float32)
-    })
 
-    values = example["values"].values
-    shape = tf.cast(example["shape"].values, tf.int32)
-#    tensor = tf.reshape(values, shape)
+    sequence_features = {
+      'frames': tf.FixedLenSequenceFeature([], dtype=tf.string)
+    }
 
-    tensor = tf.reshape(values, [shape[0], shape[1] * shape[2] * shape[3]])
-    
+    features, sequence_features = tf.parse_single_sequence_example(element, context_features=None,
+                                                             sequence_features=sequence_features)
+
+    images = tf.map_fn(lambda x: tf.image.decode_jpeg(x, channels=3), sequence_features['frames'], dtype=tf.uint8)
+
+    shape = tf.shape(images)
+    tensor = tf.reshape(images, [shape[0], shape[1] * shape[2] * shape[3]])
+
     features["length"] = tf.shape(tensor)[0]
     features["tensor"] = tf.cast(tensor, self.dtype)
     return features
@@ -95,8 +89,9 @@ def kaffe_imagenet_process_image(img, scale, isotropic, crop, mean):
   # See: https://github.com/tensorflow/tensorflow/issues/521
   offset = (new_shape - crop) / 2
   img = tf.slice(img, begin=tf.stack([offset[0], offset[1], 0]), size=tf.stack([crop, crop, -1]))
+#  cropped = tf.image.resize_image_with_crop_or_pad(img, crop, crop)
   # Mean subtraction
-  return tf.to_float(img) - mean
+  return (img - mean).numpy()
 
 def get_video(videoF):
   #alexnet_spec
@@ -111,23 +106,33 @@ def get_video(videoF):
   vidcap = cv2.VideoCapture(videoF)  
   len = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
   imgList = []
-  
+
   for _ in range(len):
     success, image = vidcap.read()
     # image is already bgr with 3 channels
     if not success:
       break
+
     image = kaffe_imagenet_process_image(
                               img=image,
                               scale=alex_net_scale_size,
                               isotropic=alex_net_isotropic,
                               crop=alex_net_crop_size,
                               mean=alex_net_mean)
-    imgList.append(image)
 
-  vid=np.stack(imgList, axis=0)
-  return vid
+    image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
+    imgList.append(tf.compat.as_bytes(cv2.imencode(".jpg", image)[1].tobytes()))
 
+  return imgList
+
+
+def _bytes_feature(value):
+  """Wrapper for inserting a bytes Feature into a SequenceExample proto."""
+  return tf.train.Feature(bytes_list=tf.train.BytesList(value=[str(value)]))
+
+def _bytes_feature_list(values):
+  """Wrapper for inserting a bytes FeatureList into a SequenceExample proto."""
+  return tf.train.FeatureList(feature=[_bytes_feature(v) for v in values])
 
 def write_sequence_record(vid, writer):
   """Writes a vector as a TFRecord.
@@ -135,12 +140,8 @@ def write_sequence_record(vid, writer):
     vid: A list of float numbers.
     writer: A ``tf.python_io.TFRecordWriter``.
   """
-  shape = list(vid.shape)
-  values = vid.flatten().tolist()
 
-  data = tf.train.Example(features=tf.train.Features(feature={
-      "shape": tf.train.Feature(int64_list=tf.train.Int64List(value=shape)),
-      "values": tf.train.Feature(float_list=tf.train.FloatList(value=values))
-  }))
-
-  writer.write(data.SerializeToString())
+  feature_list = {'frames': _bytes_feature_list(vid)}
+  feature_lists = tf.train.FeatureLists(feature_list=feature_list)
+  example = tf.train.SequenceExample(feature_lists=feature_lists, context=None)
+  writer.write(example.SerializeToString())

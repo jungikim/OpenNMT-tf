@@ -334,10 +334,6 @@ class LoadPretrainWeightsHook(_SESSION_RUN_HOOK):
     session: The current TensorFlow session
     ignore_missing: If true, serialized weights for missing layers are ignored.
     '''
-    tvars = tf.trainable_variables()
-    for tvar in tvars:
-      tf.logging.info('Tvar: %s' % tvar)
-
     import numpy as np
     data_path = '/home/jkim/caffe-models/bvlc_alexnet-tensorflow/bvlc_alexnet-train.npy'
     tf.logging.info('Loading from %s' % data_path)

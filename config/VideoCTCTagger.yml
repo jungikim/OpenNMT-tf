@@ -10,6 +10,23 @@ params:
   start_decay_steps: 500000
   beam_width: 5
   maximum_iterations: 250
+  freeze_variables:
+    - seqtagger/encoder/encoder_0/Kaffe/conv1/weights:0
+    - seqtagger/encoder/encoder_0/Kaffe/conv1/biases:0
+    - seqtagger/encoder/encoder_0/Kaffe/conv2/weights:0
+    - seqtagger/encoder/encoder_0/Kaffe/conv2/biases:0
+    - seqtagger/encoder/encoder_0/Kaffe/conv3/weights:0
+    - seqtagger/encoder/encoder_0/Kaffe/conv3/biases:0
+    - seqtagger/encoder/encoder_0/Kaffe/conv4/weights:0
+    - seqtagger/encoder/encoder_0/Kaffe/conv4/biases:0
+    - seqtagger/encoder/encoder_0/Kaffe/conv5/weights:0
+    - seqtagger/encoder/encoder_0/Kaffe/conv5/biases:0
+    - seqtagger/encoder/encoder_0/Kaffe/fc6/weights:0
+    - seqtagger/encoder/encoder_0/Kaffe/fc6/biases:0
+    - seqtagger/encoder/encoder_0/Kaffe/fc7/weights:0
+    - seqtagger/encoder/encoder_0/Kaffe/fc7/biases:0
+    - seqtagger/encoder/encoder_0/Kaffe/fc8/weights:0
+    - seqtagger/encoder/encoder_0/Kaffe/fc8/biases:0
 
 train:
   batch_size: 1
