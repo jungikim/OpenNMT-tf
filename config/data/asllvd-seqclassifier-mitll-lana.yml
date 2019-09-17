@@ -1,0 +1,11 @@
+model_dir: ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-lana-model
+
+data:
+  train_features_file:     ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/Lana/train.tfrecords
+  train_labels_file:       ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/Lana/train.label
+
+  eval_features_file:      ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/Lana/test.tfrecords
+  eval_labels_file:        ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/Lana/test.label
+
+  tags_vocabulary:         ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/ASL.vocab
+  target_words_vocabulary: ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/ASL.vocab

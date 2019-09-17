@@ -111,14 +111,6 @@ class TransformerASR(onmt.models.Transformer):
         attention_dropout=0.2,
         relu_dropout=0.2)
 
-class KaffeImageClassifier(onmt.models.SequenceClassifier):
-  """  """
-  def __init__(self, modelname):
-    super(KaffeImageClassifier, self).__init__(
-        inputter=onmt.inputters.video_inputter(modelname),
-        encoder=onmt.encoders.KaffeEncoder(modelname),
-        labels_vocabulary_file_key="tags_vocabulary")
-
 class NMTBig(_RNNBase):
   """Defines a bidirectional LSTM encoder-decoder model."""
   def __init__(self):
@@ -237,6 +229,23 @@ class SeqTagger(onmt.models.SequenceTagger):
         }
     })
 
+class VideoClassifier(onmt.models.SequenceClassifier):
+  """  """
+  def __init__(self):
+    super(VideoClassifier, self).__init__(
+        inputter=onmt.inputters.VideoInputter(),
+        encoder= onmt.encoders.SequentialEncoder([
+        onmt.encoders.KaffeEncoder('AlexNet'),
+        onmt.encoders.BidirectionalRNNEncoder(
+            num_layers=2,
+            num_units=256,
+            reducer=onmt.layers.ConcatReducer(),
+            cell_class=tf.nn.rnn_cell.LSTMCell,
+            dropout=0.3,
+            residual_connections=False)
+        ]),
+        labels_vocabulary_file_key="tags_vocabulary")
+
 
 class VideoCTCTagger(onmt.models.SequenceTagger):
   """Defines a """
@@ -247,11 +256,11 @@ class VideoCTCTagger(onmt.models.SequenceTagger):
         encoder= onmt.encoders.SequentialEncoder([
         onmt.encoders.KaffeEncoder('AlexNet'),
         onmt.encoders.BidirectionalRNNEncoder(
-            num_layers=1,
-            num_units=4096,
+            num_layers=2,
+            num_units=256,
             reducer=onmt.layers.ConcatReducer(),
             cell_class=tf.nn.rnn_cell.LSTMCell,
-            dropout=0.5,
+            dropout=0.3,
             residual_connections=False)
         ]),
 
@@ -269,6 +278,84 @@ class VideoCTCTagger(onmt.models.SequenceTagger):
             "batch_size": 32
         }
     })
+
+class VideoTransformer(onmt.models.SequenceToSequence):
+  """Defines a """
+  
+  def __init__(self, dtype=tf.float32):
+    # pylint: disable=bad-continuation
+    position_encoder = onmt.layers.position.SinusoidalPositionEncoder()
+    num_layers=3
+    num_units=256
+    num_heads=8
+    ffn_inner_dim=1024
+    dropout=0.1
+    attention_dropout=0.1
+    relu_dropout=0.1
+    decoder_self_attention_type="scaled_dot"
+
+    super(VideoTransformer, self).__init__(
+        source_inputter=onmt.inputters.VideoInputter(),
+        target_inputter=onmt.inputters.WordEmbedder(
+            vocabulary_file_key="target_words_vocabulary",
+            embedding_size=512,
+            dtype=dtype),
+        encoder= onmt.encoders.SequentialEncoder([
+            onmt.encoders.KaffeEncoder('AlexNet'),
+            onmt.encoders.self_attention_encoder.SelfAttentionEncoder(
+                                                num_layers,
+                                                num_units=num_units,
+                                                num_heads=num_heads,
+                                                ffn_inner_dim=ffn_inner_dim,
+                                                dropout=dropout,
+                                                attention_dropout=attention_dropout,
+                                                relu_dropout=relu_dropout,
+                                                position_encoder=position_encoder)
+        ]),
+        decoder = onmt.decoders.self_attention_decoder.SelfAttentionDecoder(
+                                            num_layers,
+                                            num_units=num_units,
+                                            num_heads=num_heads,
+                                            ffn_inner_dim=ffn_inner_dim,
+                                            dropout=dropout,
+                                            attention_dropout=attention_dropout,
+                                            relu_dropout=relu_dropout,
+                                            position_encoder=position_encoder,
+                                            self_attention_type=decoder_self_attention_type)
+        )
+
+  def auto_config(self, num_devices=1):
+    config = super(VideoTransformer, self).auto_config(num_devices=num_devices)
+    return merge_dict(config, {
+        "params": {
+            "average_loss_in_time": True,
+            "label_smoothing": 0.1,
+            "optimizer": "LazyAdamOptimizer",
+            "optimizer_params": {
+                "beta1": 0.9,
+                "beta2": 0.998
+            },
+            "learning_rate": 2.0,
+            "decay_type": "noam_decay_v2",
+            "decay_params": {
+                "model_dim": self._num_units,
+                "warmup_steps": 8000
+            }
+        },
+        "train": {
+            "effective_batch_size": 25000,
+            "batch_size": 3072,
+            "batch_type": "tokens",
+            "maximum_features_length": 100,
+            "maximum_labels_length": 100,
+            "keep_checkpoint_max": 8,
+            "average_last_checkpoints": 8
+        }
+    })
+
+  def _initializer(self, params):
+    return tf.variance_scaling_initializer(
+        mode="fan_avg", distribution="uniform", dtype=self.dtype)
 
 
 class Transformer(onmt.models.Transformer):

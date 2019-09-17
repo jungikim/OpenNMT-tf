@@ -1,0 +1,11 @@
+model_dir: ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-liz-model
+
+data:
+  train_features_file:     ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/Liz/train.tfrecords
+  train_labels_file:       ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/Liz/train.label
+
+  eval_features_file:      ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/Liz/test.tfrecords
+  eval_labels_file:        ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/Liz/test.label
+
+  tags_vocabulary:         ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/ASL.vocab
+  target_words_vocabulary: ASLLRP-ASLLVD-OpenNMT-tf-SeqClassifier-mitll-data/ASL.vocab

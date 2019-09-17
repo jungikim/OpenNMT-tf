@@ -1,13 +1,14 @@
 params:
-  optimizer: GradientDescentOptimizer
-  learning_rate: 1.0
-  param_init: 0.1
-  clip_gradients: 5.0
-  decay_type: exponential_decay
+  optimizer: AdamOptimizer
+  learning_rate: 1.0 # The scale constant.
+  clip_gradients: null
+  decay_step_duration: 8 # 1 decay step is 8 training steps.
+  decay_type: noam_decay_v2
   decay_params:
-    decay_rate: 0.7
-    decay_steps: 100000
-  start_decay_steps: 500000
+    model_dim: 512
+    warmup_steps: 2000 # (= 16000 training steps).
+  start_decay_steps: 0
+
   beam_width: 5
   maximum_iterations: 250
   freeze_variables:
@@ -29,19 +30,20 @@ params:
     - seqtagger/encoder/encoder_0/Kaffe/fc8/biases:0
 
 train:
-  batch_size: 1
+  batch_size: 4
   bucket_width: 1
   save_checkpoints_steps: 5000
+  keep_checkpoint_max: 0
   save_summary_steps: 50
-  train_steps: 1000000
-  maximum_features_length: 300
+  train_steps: 100000
+  maximum_features_length: 500
   maximum_labels_length: 10
 
   # Consider setting this to -1 to match the number of training examples.
   sample_buffer_size: 0
 
 eval:
-  eval_delay: 18000  # Every 5 hours.
+  eval_delay: 3600  # Every 1 hour
 
 infer:
   batch_size: 3

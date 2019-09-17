@@ -84,7 +84,7 @@ class SequenceTagger(Model):
       elif self.ctc_decoding:
         logits_transposed = tf.transpose(logits, perm=[1, 0, 2])
 
-        decoded, log_probabilities = tf.nn.ctc_beam_search_decoder(
+        decoded, log_probabilities = tf.compat.v2.nn.ctc_beam_search_decoder(
                                             logits_transposed,
                                             encoder_sequence_length,
                                             top_paths=1)

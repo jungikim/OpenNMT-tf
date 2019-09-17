@@ -340,7 +340,8 @@ class LoadPretrainWeightsHook(_SESSION_RUN_HOOK):
     data_dict = np.load(data_path).item()
     for op_name in data_dict:
       tf.logging.info('op_name %s' % op_name)
-      with tf.variable_scope('seqtagger/encoder/encoder_0/Kaffe/%s' % op_name, reuse=True):
+      with tf.variable_scope('seqclassifier/encoder/encoder_0/Kaffe/%s' % op_name, reuse=True):
+#      with tf.variable_scope('seqtagger/encoder/encoder_0/Kaffe/%s' % op_name, reuse=True):
         for param_name, data in data_dict[op_name].iteritems():
           tf.logging.info('param_name %s' % param_name)
           try:
