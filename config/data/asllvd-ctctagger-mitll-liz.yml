@@ -1,0 +1,11 @@
+model_dir: ASLLRP-ASLLVD-OpenNMT-tf-CTCTagger-mitllsyn-liz-model
+
+data:
+  train_features_file:     ASLLRP-ASLLVD-OpenNMT-tf-CTCTagger-mitllsyn-data/liz/train.tfrecords
+  train_labels_file:       ASLLRP-ASLLVD-OpenNMT-tf-CTCTagger-mitllsyn-data/liz/train.label
+
+  eval_features_file:      ASLLRP-ASLLVD-OpenNMT-tf-CTCTagger-mitllsyn-data/liz/test.tfrecords
+  eval_labels_file:        ASLLRP-ASLLVD-OpenNMT-tf-CTCTagger-mitllsyn-data/liz/test.label
+
+  tags_vocabulary:         ASLLRP-ASLLVD-OpenNMT-tf-CTCTagger-mitllsyn-data/ASL.vocab
+  target_words_vocabulary: ASLLRP-ASLLVD-OpenNMT-tf-CTCTagger-mitllsyn-data/ASL.vocab

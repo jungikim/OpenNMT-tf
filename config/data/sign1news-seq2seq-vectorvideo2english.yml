@@ -1,0 +1,10 @@
+model_dir: sign1news-OpenNMT-tf-VideoVector-to-English-model
+
+data:
+  train_features_file:     sign1news-OpenNMT-tf-VideoVector-to-English-data/sign1news_dir-cat_upper_tok.shuf.train.tfrecords
+  train_labels_file:       sign1news-OpenNMT-tf-VideoVector-to-English-data/sign1news_dir-cat_upper_tok.shuf.train.label
+
+  eval_features_file:      sign1news-OpenNMT-tf-VideoVector-to-English-data/sign1news_dir-cat_upper_tok.shuf.valid.tfrecords
+  eval_labels_file:        sign1news-OpenNMT-tf-VideoVector-to-English-data/sign1news_dir-cat_upper_tok.shuf.valid.label
+
+  target_words_vocabulary: sign1news-OpenNMT-tf-VideoVector-to-English-data/sign1news_vocab_upper_tok.txt

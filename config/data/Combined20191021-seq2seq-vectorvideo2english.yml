@@ -1,0 +1,10 @@
+model_dir: Combined20191021-OpenNMT-tf-VideoVector-to-English-model
+
+data:
+  train_features_file:     Combined20191021-OpenNMT-tf-VideoVector-to-English-data/train.tfrecords
+  train_labels_file:       Combined20191021-OpenNMT-tf-VideoVector-to-English-data/train_english.txt
+
+  eval_features_file:      Combined20191021-OpenNMT-tf-VideoVector-to-English-data/test.tfrecords
+  eval_labels_file:        Combined20191021-OpenNMT-tf-VideoVector-to-English-data/test_english.txt
+
+  target_words_vocabulary: Combined20191021-OpenNMT-tf-VideoVector-to-English-data/EN.vocab
