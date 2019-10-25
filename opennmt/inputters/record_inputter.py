@@ -17,13 +17,16 @@ class SequenceRecordInputter(Inputter):
   Tensors are expected to be of shape ``[time, depth]``.
   """
 
-  def __init__(self, dtype=tf.float32):
+  def __init__(self, dropout=0.0, frameskip=0, dtype=tf.float32):
     """Initializes the parameters of the record inputter.
 
     Args:
       dtype: The values type.
     """
     super(SequenceRecordInputter, self).__init__(dtype=dtype)
+    self.dropout=dropout
+    self.frameskip=frameskip
+
 
   def make_dataset(self, data_file, training=None):
     first_record = next(compat.tf_compat(v1="python_io.tf_record_iterator")(data_file))
@@ -56,13 +59,27 @@ class SequenceRecordInputter(Inputter):
     shape = tf.cast(example["shape"].values, tf.int32)
     tensor = tf.reshape(values, shape)
     tensor.set_shape([None, self.input_depth])
-    features["length"] = tf.shape(tensor)[0]
-    features["tensor"] = tf.cast(tensor, self.dtype)
+
+    if training and self.frameskip > 0:
+      featlen = tf.reshape(tf.shape(tensor)[0],[])
+      toSkip = tf.random_uniform(shape=[], minval=1, maxval=self.frameskip, dtype=tf.int32)
+#      desiredNumFrames = tf.floor(tf.compat.v1.div(featlen, toSkip))
+      beginOffset = tf.math.minimum(featlen, tf.random_uniform(shape=[], minval=0, maxval=toSkip, dtype=tf.int32))
+      offsets = tf.compat.v1.range(beginOffset, featlen, delta=toSkip)
+      selectedFrames = tf.map_fn(lambda i: tensor[i], offsets, dtype=(self.dtype))
+      features["length"] = tf.shape(selectedFrames)[0]
+      features["tensor"] = tf.cast(selectedFrames, self.dtype)
+    else:
+      features["length"] = tf.shape(tensor)[0]
+      features["tensor"] = tf.cast(tensor, self.dtype)
+
     return features
 
   def make_inputs(self, features, training=None):
-    return features["tensor"]
-
+    outputs = features["tensor"]
+    if training and self.dropout > 0:
+      outputs = tf.keras.layers.Dropout(self.dropout)(outputs, training=training)
+    return outputs
 
 def write_sequence_record(vector, writer):
   """Writes a vector as a TFRecord.

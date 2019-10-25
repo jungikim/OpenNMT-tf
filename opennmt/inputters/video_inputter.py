@@ -18,8 +18,10 @@ from __builtin__ import False
 class VideoInputter(Inputter):
   """An inputter that processes Videos where each frame is processed by the AlexNet model from kaffe-tensorflow."""
 
-  def __init__(self, dtype=tf.float32):
+  def __init__(self, dropout=0.0, frameskip=0, dtype=tf.float32):
     super(VideoInputter, self).__init__(dtype=dtype)
+    self.dropout=dropout
+    self.frameskip=frameskip
 
   def get_length(self, data):
     return data["length"]
@@ -48,25 +50,33 @@ class VideoInputter(Inputter):
     shape = tf.shape(images)
     tensor = tf.reshape(images, [shape[0], shape[1] * shape[2] * shape[3]])
 
-    features["length"] = tf.shape(tensor)[0]
-    features["tensor"] = tf.cast(tensor, self.dtype)
+    if training and self.frameskip > 0:
+      featlen = tf.reshape(tf.shape(tensor)[0],[])
+      toSkip = tf.random_uniform(shape=[], minval=1, maxval=self.frameskip, dtype=tf.int32)
+#      desiredNumFrames = tf.floor(tf.compat.v1.div(featlen, toSkip))
+      beginOffset = tf.math.minimum(featlen, tf.random_uniform(shape=[], minval=0, maxval=toSkip, dtype=tf.int32))
+      offsets = tf.compat.v1.range(beginOffset, featlen, delta=toSkip)
+      selectedFrames = tf.map_fn(lambda i: tensor[i], offsets, dtype=(self.dtype))
+      features["length"] = tf.shape(selectedFrames)[0]
+      features["tensor"] = tf.cast(selectedFrames, self.dtype)
+    else:
+      features["length"] = tf.shape(tensor)[0]
+      features["tensor"] = tf.cast(tensor, self.dtype)
+
     return features
 
   def make_inputs(self, features, training=None):
     outputs = features["tensor"]
-#    if training and self.dropout > 0:
-#      outputs = tf.keras.layers.Dropout(self.dropout)(outputs, training=training)
+
+    if training and self.dropout > 0:
+      outputs = tf.keras.layers.Dropout(self.dropout)(outputs, training=training)
     return outputs
 
-#   def _get_serving_input(self):
-#     receiver_tensors = {
-#         "tokens": tf.placeholder(tf.string, shape=(None, None)),
-#         "length": tf.placeholder(tf.int32, shape=(None,))
-#     }
-#     features = receiver_tensors.copy()
-#     features["ids"] = self.vocabulary.lookup(features["tokens"])
-#     return receiver_tensors, features
-
+  def get_receiver_tensors(self):
+    return {
+        "tensor": tf.placeholder(self.dtype, shape=(None, None, 227*227*3)),
+        "length": tf.placeholder(tf.int32, shape=(None,))
+    }
 
 def kaffe_imagenet_process_image(img, scale, isotropic, crop, mean):
   '''Crops, scales, and normalizes the given image.
