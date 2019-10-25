@@ -247,6 +247,22 @@ class VideoClassifier(onmt.models.SequenceClassifier):
         labels_vocabulary_file_key="tags_vocabulary")
 
 
+class VectorClassifier(onmt.models.SequenceClassifier):
+  """  """
+  def __init__(self):
+    super(VectorClassifier, self).__init__(
+        inputter=onmt.inputters.SequenceRecordInputter(),
+        encoder=onmt.encoders.BidirectionalRNNEncoder(
+            num_layers=4,
+            num_units=512,
+            reducer=onmt.layers.ConcatReducer(),
+            cell_class=tf.nn.rnn_cell.LSTMCell,
+            dropout=0.3,
+            residual_connections=False),
+        labels_vocabulary_file_key="tags_vocabulary")
+
+
+
 class VideoCTCTagger(onmt.models.SequenceTagger):
   """Defines a """
   def __init__(self):
@@ -356,6 +372,25 @@ class VideoTransformer(onmt.models.SequenceToSequence):
   def _initializer(self, params):
     return tf.variance_scaling_initializer(
         mode="fan_avg", distribution="uniform", dtype=self.dtype)
+
+
+class VectorTransformer(onmt.models.Transformer):
+  """Defines a Transformer model as decribed in https://arxiv.org/abs/1706.03762."""
+  def __init__(self, dtype=tf.float32):
+    super(VectorTransformer, self).__init__(
+        source_inputter=onmt.inputters.SequenceRecordInputter(dtype=dtype, dropout=0.3, frameskip=8),
+        target_inputter=onmt.inputters.WordEmbedder(
+            vocabulary_file_key="target_words_vocabulary",
+            embedding_size=512,
+            dtype=dtype),
+        num_layers=6,
+        num_units=512,
+        num_heads=8,
+        ffn_inner_dim=2048,
+        dropout=0.1,
+        attention_dropout=0.1,
+        relu_dropout=0.1)
+
 
 
 class Transformer(onmt.models.Transformer):
